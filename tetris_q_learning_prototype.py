@@ -43,6 +43,7 @@ from random import randrange as rand
 import random
 import math
 import pygame, sys
+import csv
 
 
 #possible functions:
@@ -387,9 +388,7 @@ Press space to continue""" % self.score)
 					self.drop(False)
 				elif event.type == pygame.QUIT:
 					self.running = False
-					for key,value in self.q_table.items():
-						print(key, " ", value)
-					print(len(self.q_table))
+					self.save_q_table()
 					self.quit()
 				#elif event.type == pygame.KEYDOWN:
 				#	for key in key_actions:
@@ -457,10 +456,21 @@ Press space to continue""" % self.score)
 
 			self.q_table[(self.p_state,self.c_action)] =q0+ 0.1*(self.reward+self.gamma*max_reward - q0)
 			self.reward = 0
-
-		
-		
+			
+	def save_q_table(self):
+		with open('q_table_values.csv', 'w', newline='') as f:
+			writer = csv.writer(f,delimiter=",")
+			writer.writerow(['board state']+['rotation']+['x_pos']+['reward'])
+			for key,value in self.q_table.items():
+				state, action = key
+				rotation, x_pos = action
+				writer.writerow([str(state),str(rotation),str(x_pos),str(value)])
+				#print(key, " ", value)
+			#print(len(self.q_table))
+			
+			
 			
 if __name__ == '__main__':
 	App = TetrisApp()
 	App.run()
+

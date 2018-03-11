@@ -5,6 +5,8 @@
 #they've reached the node with the highest reward.
 
 import random
+import csv
+
 
 #Define reward table
 r =[[-1,-1,-1,-1,0,-1],
@@ -20,7 +22,7 @@ gamma =0.8
 q = [[0 for x in range(6)]
          for y in range(6)]
 
-n_episodes = 100
+n_episodes = 1
 n_states = 6
 
 c_state = None
@@ -59,11 +61,15 @@ while n_episodes >0:
         q[c_state][c_action] = r[c_state][c_action]+gamma * max(q[c_action])
         reward = r[c_state][c_action]
         print(q)
+        #print '\t'.join([str(ALPHA), str(EPSILON), str(super_cycles), str(super_reward), str(super_violations)])
         
         if reward >=100:
             goal = True
         else:
             c_state =c_action
 
-
+with open("tester.csv", "w") as f:               
+     writer = csv.writer(f,delimiter=",")
+     writer.writerows("1")
+     
         

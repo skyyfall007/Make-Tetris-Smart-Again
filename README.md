@@ -1,6 +1,7 @@
 # Make-Tetris-Smart-Again
 
-This project is about using Machine Learning to solve the problem of tetris
+Undergraduate capstone project developed with the objective of presenting an applied theories of reinforcement learning and machine learning via the game of Tetris. Completion of project allowed for the better understanding of machine learning concepts from an undergraduate perspective and the possible advancements that can be explored by doing so. 
+
 
 
 ### Contents

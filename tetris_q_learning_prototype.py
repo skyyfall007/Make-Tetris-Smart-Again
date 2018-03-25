@@ -141,6 +141,8 @@ class TetrisApp(object):
 		self.height = cell_size*rows
 		self.rlim = cell_size*cols
 		self.bground_grid = [[ 8 if x%2==y%2 else 0 for x in range(cols)] for y in range(rows)]
+		# 0 is for learning and 1 is for playing
+		self.agent_mode = 1
 		
 		self.default_font =  pygame.font.Font(
 			pygame.font.get_default_font(), 12)
@@ -365,23 +367,15 @@ Press space to continue""" % self.score)
 			if self.a_index==len(self.actions):
 				self.get_actions_available()
 				self.update_table()
-				#key_actions[get_action()]()
 				self.choose_action()
 				self.a_index = 0
-				#print(self.actions)
 			else:
                                 #previous state is set before the final action
 				self.p_state = str(self.board)+str(self.stone)
 				key_actions[self.actions[self.a_index]]()
-				#print(self.a_index])
-				self.a_index+=1
 				
-				#print(actions)
-				#self.ti=5
-                                
+				self.a_index+=1
 			
-			
-			#print(self.available_actions)
 			
 			for event in pygame.event.get():
 				if event.type == pygame.USEREVENT+1:
@@ -419,10 +413,6 @@ Press space to continue""" % self.score)
 		self.actions = []
 		if len(self.available_actions)>0:
 			rotation, position = random.choice(self.available_actions)
-			#print(rotation, ' ', offset)
-			#for i in range(rotation):
-			#	self.actions.append('UP')
-			#print(offset)
 			dir = 0
 			self.c_action = (rotation,position)
 			while position !=self.stone_x:
@@ -460,15 +450,23 @@ Press space to continue""" % self.score)
 	def save_q_table(self):
 		with open('q_table_values.csv', 'w', newline='') as f:
 			writer = csv.writer(f,delimiter=",")
-			writer.writerow(['board state']+['rotation']+['x_pos']+['reward'])
+			#writer.writerow(['board state']+['rotation']+['x_pos']+['reward'])
 			for key,value in self.q_table.items():
 				state, action = key
 				rotation, x_pos = action
 				writer.writerow([str(state),str(rotation),str(x_pos),str(value)])
 				#print(key, " ", value)
 			#print(len(self.q_table))
-			
-			
+
+	def read_q_table(self):
+		with open('q_table_values.csv', 'w', newline='') as f:
+			reader = csv.reader(f,delimiter='', quotechar='|')
+			for row in reader:
+				action = (int(row[1]),int(row[2]))
+				state = str(row[0])
+				key = (state,action)
+				self.q_table[key] = float(row[3])
+
 			
 if __name__ == '__main__':
 	App = TetrisApp()

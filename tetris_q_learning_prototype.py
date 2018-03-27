@@ -54,8 +54,8 @@ import csv
 
 # The configuration
 cell_size =	18
-cols =		3
-rows =		3
+cols =		10
+rows =		22
 maxfps = 	30
 
 
@@ -76,24 +76,26 @@ actions = ['LEFT','RIGHT','RETURN']
 
 # Define the shapes of the single parts
 tetris_shapes = [
-##	[[1, 1, 1],
-##	 [0, 1, 0]],
-##	
-##	[[0, 2, 2],
-##	 [2, 2, 0]],
-##	
-##	[[3, 3, 0],
-##	 [0, 3, 3]],
-##	
-##	[[4, 0, 0],
-##	 [4, 4, 4]],
-##	
-##	[[0, 0, 5],
-##	 [5, 5, 5]],
-##	
-##	[[6, 6, 6, 6]],
+	[[1, 1, 1],
+	 [0, 1, 0]],
 	
-	[[1]]
+	[[0, 1, 1],
+	 [1, 1, 0]],
+	
+	[[1, 1, 0],
+	 [0, 1, 1]],
+	
+	[[1, 0, 0],
+	 [1, 1, 1]],
+	
+	[[0, 0, 1],
+	 [1, 1, 1]],
+	
+	[[1, 1, 1, 1]],
+        [[1, 1],
+	 [1, 1]]
+	
+	#[[1]]
 ]
 
 def rotate_clockwise(shape):
@@ -122,7 +124,6 @@ def join_matrixes(mat1, mat2, mat2_off):
 		for cx, val in enumerate(row):
 			mat1[cy+off_y-1	][cx+off_x] += val
 	return mat1
-
 def new_board():
 	board = [ [ 0 for x in range(cols) ]
 			for y in range(rows) ]
@@ -142,7 +143,7 @@ class TetrisApp(object):
 		self.rlim = cell_size*cols
 		self.bground_grid = [[ 8 if x%2==y%2 else 0 for x in range(cols)] for y in range(rows)]
 		# 0 is for learning and 1 is for playing
-		self.agent_mode = 1
+		self.agent_mode = 0
 		
 		self.default_font =  pygame.font.Font(
 			pygame.font.get_default_font(), 12)
@@ -329,6 +330,7 @@ class TetrisApp(object):
 		self.paused = False
 		
 		dont_burn_my_cpu = pygame.time.Clock()
+		self.read_q_table()
 		while self.running:
 			self.screen.fill((0,0,0))
 			if self.gameover:
@@ -366,6 +368,7 @@ Press space to continue""" % self.score)
 			#if self.ti<=0:
 			if self.a_index==len(self.actions):
 				self.get_actions_available()
+				#if self.agent_mode ==0:
 				self.update_table()
 				self.choose_action()
 				self.a_index = 0
@@ -412,9 +415,24 @@ Press space to continue""" % self.score)
 	def choose_action(self):
 		self.actions = []
 		if len(self.available_actions)>0:
-			rotation, position = random.choice(self.available_actions)
+			rotation = None
+			position = None
+			if self.agent_mode == 0:
+				rotation, position = random.choice(self.available_actions)
+			elif self.agent_mode == 1:
+				rotation, position = self.get_best_action()
+				if rotation is None or position is None:
+					print("KNEW NOTHING")
+					rotation, position = random.choice(self.available_actions)
+				else:
+					print("I KNOW STUFF")
+			
 			dir = 0
 			self.c_action = (rotation,position)
+			rot = 0
+			while rot<=rotation:
+				rot+=1
+				self.actions.append('UP')
 			while position !=self.stone_x:
 				if position<self.stone_x:
 					dir = 1
@@ -459,13 +477,31 @@ Press space to continue""" % self.score)
 			#print(len(self.q_table))
 
 	def read_q_table(self):
-		with open('q_table_values.csv', 'w', newline='') as f:
-			reader = csv.reader(f,delimiter='', quotechar='|')
+		with open('q_table_values.csv', 'r', newline='') as f:
+			reader = csv.reader(f,delimiter=',', quotechar='"')
 			for row in reader:
 				action = (int(row[1]),int(row[2]))
 				state = str(row[0])
 				key = (state,action)
 				self.q_table[key] = float(row[3])
+
+	def get_best_action(self):
+		best_action = None#self.available_actions[0]
+		r = 0
+		best_reward  = 0
+		for a in self.available_actions:
+			_state = (str(self.board)+str(self.stone),a)
+			if  _state in self.q_table:
+				r = self.q_table[_state]
+				if best_reward <r:
+					best_reward = r
+					best_action = a
+		if best_action is None:
+			return None, None
+		rotation, position = best_action
+
+
+		return rotation, position
 
 			
 if __name__ == '__main__':

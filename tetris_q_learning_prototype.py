@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #-*- coding: utf-8 -*-
 
 # NOTE FOR WINDOWS USERS:
@@ -92,6 +92,7 @@ tetris_shapes = [
 	 [1, 1, 1]],
 	
 	[[1, 1, 1, 1]],
+        
         [[1, 1],
 	 [1, 1]]
 	
@@ -143,7 +144,7 @@ class TetrisApp(object):
 		self.rlim = cell_size*cols
 		self.bground_grid = [[ 8 if x%2==y%2 else 0 for x in range(cols)] for y in range(rows)]
 		# 0 is for learning and 1 is for playing
-		self.agent_mode = 0
+		self.agent_mode = 1
 		
 		self.default_font =  pygame.font.Font(
 			pygame.font.get_default_font(), 12)
@@ -169,7 +170,8 @@ class TetrisApp(object):
 		self.at_goal = False
 		self.action_list = []
 		self.reward = 0
-		self.h_row_y = 0
+		self.h_row_y = 22
+		self.stone_y_final = 0
 		self.init_game()
 		
 	
@@ -194,6 +196,7 @@ class TetrisApp(object):
 		self.score = 0
 		self.lines = 0
 		self.running = True
+		self.h_row_y=22
 		pygame.time.set_timer(pygame.USEREVENT+1, 1000)
 	
 	def disp_msg(self, msg, topleft):
@@ -265,25 +268,24 @@ class TetrisApp(object):
 		sys.exit()
 	
 	def drop(self, manual):
+		
 		if not self.gameover and not self.paused:
 			self.score += 1 if manual else 0
 			self.stone_y += 1
 			if check_collision(self.board,self.stone,(self.stone_x, self.stone_y)):
+				
 				self.board = join_matrixes(self.board,self.stone,(self.stone_x, self.stone_y))
-				if self.h_row_y>self.stone_y:
-					self.reward-=5
-					self.h_row_y = self.stone_y
-				else:
-					self.reward+=5
+				self.stone_y_final = self.stone_y
 				self.new_stone()
 				cleared_rows = 0
+				
 				while True:
 					for i, row in enumerate(self.board[:-1]):
 						if 0 not in row:
 							self.board = remove_row(
 							  self.board, i)
 							cleared_rows += 1
-							#print("WINWIN")
+							print("WINWIN")
 							self.reward+=10
 							self.h_row_y-=1
 							break
@@ -296,7 +298,16 @@ class TetrisApp(object):
 	def insta_drop(self):
 		if not self.gameover and not self.paused:
 			while(not self.drop(True)):
+				self.stone_y_final = self.stone_y
 				pass
+			if self.stone_y_final<self.h_row_y:
+				print(self.stone_y_final,self.h_row_y)
+				self.reward-=5
+				self.h_row_y = self.stone_y_final
+			else:
+				self.reward+=5
+			
+			
 	
 	def rotate_stone(self):
 		if not self.gameover and not self.paused:
@@ -397,8 +408,7 @@ Press space to continue""" % self.score)
      #get available actions
 	#fills list of available actions with a tuple: (orientation,x_offset)
         #check collision based off offsets from pieces positions on board. offsets based on number of cols
-        #ex: for i in range(#offsets): offset =(i+1)-x_pos # if !check_col(board,shape,offset): 
-        #def move_to(x_pos,board):
+        #ex: for i in range(offsets): offset =(i+1)-x_pos # if !check_col(board,shape,offset):
 	def get_actions_available(self):
 		self.available_actions = []
 		for i in range(cols):
@@ -477,14 +487,16 @@ Press space to continue""" % self.score)
 			#print(len(self.q_table))
 
 	def read_q_table(self):
-		with open('q_table_values.csv', 'r', newline='') as f:
-			reader = csv.reader(f,delimiter=',', quotechar='"')
-			for row in reader:
-				action = (int(row[1]),int(row[2]))
-				state = str(row[0])
-				key = (state,action)
-				self.q_table[key] = float(row[3])
-
+		try:
+			with open('q_table_values.csv', 'r', newline='') as f:
+				reader = csv.reader(f,delimiter=',', quotechar='"')
+				for row in reader:
+					action = (int(row[1]),int(row[2]))
+					state = str(row[0])
+					key = (state,action)
+					self.q_table[key] = float(row[3])
+		except:
+			print("There is no preexisting data set")
 	def get_best_action(self):
 		best_action = None#self.available_actions[0]
 		r = 0
